@@ -1,0 +1,66 @@
+from magenta.models.melody_rnn import melody_rnn_sequence_generator
+from magenta.models.shared import sequence_generator_bundle
+from magenta.music import sequences_lib
+from magenta.music.protobuf import music_pb2
+from pydub import AudioSegment
+from pydub.playback import play
+import numpy as np
+import simpleaudio as sa
+
+# Step 1: Generate a melody using Magenta
+def generate_melody():
+    # Load a pre-trained model
+    bundle = sequence_generator_bundle.read_bundle_file('path_to_bundle_file')  # Download from Magenta GitHub
+    generator_map = melody_rnn_sequence_generator.get_generator_map()
+    generator = generator_map['basic_rnn'](checkpoint=None, bundle=bundle)
+    generator.initialize()
+
+    # Create a starting sequence
+    input_sequence = music_pb2.NoteSequence()
+    input_sequence.ticks_per_quarter = 220
+
+    # Generate a 10-minute melody
+    generated_sequence = generator.generate(input_sequence, duration_seconds=600)
+    return generated_sequence
+
+# Step 2: Generate a 417 Hz sine wave
+def generate_417hz_wave(duration=600, volume=0.2):
+    sample_rate = 44100
+    t = np.linspace(0, duration, int(sample_rate * duration), False)
+    wave = volume * np.sin(417 * 2 * np.pi * t)
+    return wave
+
+# Step 3: Mix the melody and 417 Hz wave
+def mix_audio(melody_sequence, wave):
+    # Convert the melody sequence to audio
+    melody_audio = sequences_lib.sequence_proto_to_audio(melody_sequence)
+
+    # Convert the 417 Hz wave to audio
+    wave_audio = np.int16(wave * 32767)
+
+    # Mix the two audio tracks
+    mixed_audio = melody_audio + wave_audio
+    return mixed_audio
+
+# Step 4: Play the final song
+def play_audio(audio):
+    play_obj = sa.play_buffer(audio, 1, 2, 44100)
+    play_obj.wait_done()
+
+# Main function
+def main():
+    print("Generating melody...")
+    melody_sequence = generate_melody()
+
+    print("Generating 417 Hz wave...")
+    wave = generate_417hz_wave()
+
+    print("Mixing audio...")
+    mixed_audio = mix_audio(melody_sequence, wave)
+
+    print("Playing song...")
+    play_audio(mixed_audio)
+    print("Playback complete.")
+
+if __name__ == "__main__":
+    main()
