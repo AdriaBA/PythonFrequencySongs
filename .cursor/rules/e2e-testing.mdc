@@ -1,0 +1,22 @@
+---
+description: When to add or expand end-to-end tests vs unit/integration
+globs:
+alwaysApply: false
+---
+# E2E testing — when to use it
+
+## Use e2e for
+- Critical user journeys (signup/login, checkout, create-then-list)
+- Cross-layer wiring (UI → API → DB → email/webhook)
+- Regressions that only show up in a real browser or real network
+- Thin release smoke (few paths, high confidence the build is alive)
+
+## Prefer unit or integration for
+- Pure logic and pure functions
+- Single-service contracts and schema checks
+- Assertions that need heavy or flaky infrastructure
+
+## Rule of thumb
+Keep a **small** set of high-value e2e tests. Push everything else down the pyramid (unit → integration → e2e).
+
+When adding a test, ask: does this need a full stack to catch the bug? If not, do not make it e2e.
